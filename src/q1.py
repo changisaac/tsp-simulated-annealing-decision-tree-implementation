@@ -117,7 +117,7 @@ class TSPSimAnneal:
         prob = math.exp(dist_delta / t)
 
         return prob, t
-    
+   
     def decrease_t_exp(self, alpha, t):
         t = t * alpha
         return t
