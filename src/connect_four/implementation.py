@@ -11,8 +11,8 @@ import pdb
 # Are you interested in participating if this competition? Set COMPETE=TRUE if yes.
 
 # STUDENT_ID = 20611091
-# AGENT_NAME = Test
-# COMPETE = False
+# AGENT_NAME = Cagizik
+# COMPETE = True
 
 # TODO Change this evaluation function so that it tries to win as soon as possible
 # or lose as late as possible, when it decides that one side is certain to win.
@@ -43,11 +43,9 @@ def focused_evaluate(board):
 
     return score
 
-
 # Create a "player" function that uses the focused_evaluate function
 # You can test this player by choosing 'quick' in the main program.
-#quick_to_win_player = lambda board: minimax(board, depth=4, eval_fn=focused_evaluate)
-quick_to_win_player = lambda board: test_alpha_beta_search(board)
+quick_to_win_player = lambda board: minimax(board, depth=4, eval_fn=focused_evaluate)
 
 # TODO Write an alpha-beta-search procedure that acts like the minimax-search
 # procedure, but uses alpha-beta pruning to avoid searching bad ideas
@@ -150,7 +148,7 @@ def alpha_beta_find_board_value(board, depth, eval_fn, alpha, beta, is_max,
 # Now you should be able to search twice as deep in the same amount of time.
 # (Of course, this alpha-beta-player won't work until you've defined alpha_beta_search.)
 def alpha_beta_player(board):
-    return alpha_beta_search(board, depth=5, eval_fn=focused_evaluate)
+    return alpha_beta_search(board, depth=8, eval_fn=focused_evaluate)
 
 # This player uses progressive deepening, so it can kick your ass while
 # making efficient use of time:
@@ -165,8 +163,6 @@ def ab_iterative_player(board):
 def better_evaluate(board):
     if board.is_game_over():
         return -1000
-
-    score = 0
 
     curr_chains = board.chain_cells(board.get_current_player_id())
     other_chains = board.chain_cells(board.get_other_player_id())
@@ -196,8 +192,6 @@ def better_evaluate(board):
     score -= other_2_chains * 2
     score -= other_3_chains * 2
           
-    score -= board.num_tokens_on_board() * 0.5
-
     return score
            
 # Comment this line after you've fully implemented better_evaluate
@@ -205,7 +199,6 @@ def better_evaluate(board):
 
 # Uncomment this line to make your better_evaluate run faster.
 better_evaluate = memoize(better_evaluate)
-
 
 # A player that uses alpha-beta and better_evaluate:
 def my_player(board):

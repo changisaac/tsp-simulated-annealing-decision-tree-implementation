@@ -17,42 +17,41 @@ class TSPSimAnneal:
         self.data_dir = '../data/randTSP'
 
     def main(self):
-        #f = open('q1_results_h0.txt', 'a')
+        lowest_cost = float('inf')
 
-        for i in range(16,17):
-            print 'Number of Cities: ' + str(i)
-            test_dir = self.data_dir + '/' + str(i)
+        for j in range(1,2):
+            print "36 City Problem"
+            print 'Iteration Number: ' + str(j)
+            test_file = self.data_dir + '/problem36'
+            num_cities, g = self.read_in(test_file)
             
-            ave_num_nodes = 0
-            num_passed = 0
+            start_time = time.time()
+            final_path, dist_travelled, all_dists = self.sim_anneal_tsp(num_cities, g, 100)
 
-            for j in range(1,2):
-                print 'started test case # ' + str(j)
-                #test_file = test_dir +  '/instance_' + str(j) + '.txt' 
-                test_file = self.data_dir + '/problem36'
-                num_cities, g = self.read_in(test_file)
-                
-                start_time = time.time()
-                #final_path = self.calc_init_path(num_cities, g, 'A')
-                #print final_path
-                #self.display_cities(g, final_path)
-                final_path, dist_travelled = self.sim_anneal_tsp(num_cities, g, 200)
+            # plot how cost of solution changes 
+            x = range(len(all_dists))
+            y = all_dists
 
-                if True:
-                    print 'final path: ' + str(final_path)
-                    print 'distance travelled: ' + str(dist_travelled) + ' units'
-                    print 'time taken: ' + str(time.time() - start_time) + " second(s)" 
-                else:
-                    print 'FAILED'
-
-                self.display_cities(g, final_path)
+            plt.plot(x, y)
+            plt.xlabel('Simulated Annealing Iteration Number (unit)') 
+            plt.ylabel('Cost of the Solution (unit)') 
+            plt.title('Cost of the Solution vs. Simulated Annealing Iteration Number') 
+            plt.show() 
             
-            #f.write(str(ave_num_nodes) + '\n')
+            print 'final path: ' + str(final_path)
+            print 'distance travelled: ' + str(dist_travelled) + ' units'
+            print 'time taken: ' + str(time.time() - start_time) + " second(s)" 
 
+            lowest_cost = min(lowest_cost, dist_travelled)
+            #self.display_cities(g, final_path)
+
+        print 'lowest Cost: ' + str(lowest_cost) + ' units'
+            
     # Simulated annealing solving function
     # param: num_cities (int), g (dict), t (float)
     # return: path (list)
     def sim_anneal_tsp(self, num_cities, g, t):
+        all_dists = []
         curr_path = self.calc_init_path(num_cities, g, 'A')
         curr_path_dist = self.total_path_dist(g, curr_path)
 
@@ -64,11 +63,9 @@ class TSPSimAnneal:
         
         num_iter = 0
 
-        print curr_path, curr_path_dist
-
         while t > 0.01:
             num_iter += 1
-            print num_iter
+            #print 'Iteration Number: ' + str(num_iter)
             # local search using 2-opt to get moveset
             # select ordering in 2-opt randomly
             # omit start and end indices as they cannot be changed
@@ -82,42 +79,58 @@ class TSPSimAnneal:
             new_path_dist = self.total_path_dist(g, new_path)
             dist_delta = new_path_dist - curr_path_dist
             
+            # decrease t by schedule
+            # uncomment to decrease based on exponential
+            t = self.decrease_t_exp(0.99999, t)
+            #t = self.decrease_t_exp(0.9999, t)
+            
+            # uncomment to decrease based on linear
+            #t = self.decrease_t_lin(0.002, t)
+
+            #print 'Temperature: ' + str(t)
+
             # if shorter new path, dist_delta is negative
             if dist_delta < 0:
                 curr_path = new_path
                 curr_path_dist = new_path_dist
                 
-                print curr_path, curr_path_dist
-                
                 if curr_path_dist < shortest_path_dist:
                     shortest_path = curr_path
                     shortest_path_dist = curr_path_dist
             # else dist_delta is positive since new path is longer
-            else:
+            elif t > 0:
                 # calc probability and update t
-                prob, t = self.calc_boltzmann_prob(t, dist_delta) 
-                
-                print 'prob: ' + str(prob)
+                prob = self.calc_boltzmann_prob(t, dist_delta) 
+
+                #print 'Probability: ' + str(prob)
 
                 # iterate to path based on probability
                 if random.random() < prob:
                     curr_path = new_path
                     curr_path_dist = new_path_dist
-                    print curr_path, curr_path_dist
-        
-        return shortest_path, shortest_path_dist
+
+            all_dists.append(curr_path_dist)
+
+        return shortest_path, shortest_path_dist, all_dists
     
     def calc_boltzmann_prob(self, t, dist_delta):
         # decrease t based on annealing schedules
         
-        # exponential decrease schedule of t
-        t = self.decrease_t_exp(0.9999, t)
-        
+        # linear decrease of schedule of t
+        #t = self.decrease_t_lin(-0.5, t)
+
+        # exponential decrease schedule of t 
+        #t = self.decrease_t_exp(0.9999, t)
+    
         dist_delta = -dist_delta
         prob = math.exp(dist_delta / t)
 
-        return prob, t
+        return prob
    
+    def decrease_t_lin(self, delta, t):
+        t = t - delta
+        return t
+
     def decrease_t_exp(self, alpha, t):
         t = t * alpha
         return t
